@@ -1,12 +1,14 @@
-const express = require('express')
-const cors = require('cors')
-const mongoose = require('mongoose');
-const User = require('./Models/user')
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
+const User = require("./Models/user");
+const Form = require("./Models/form");
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const app = express()
-const port = 8000
-const uri = "mongodb+srv://xdneeraj:seproject@clusterstore.16q3u8s.mongodb.net/?retryWrites=true&w=majority";
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const app = express();
+const port = 8000;
+const uri =
+  "mongodb+srv://xdneeraj:seproject@clusterstore.16q3u8s.mongodb.net/?retryWrites=true&w=majority";
 
 //FIREBASE
 const { initializeApp } = require("firebase/app");
@@ -22,24 +24,79 @@ const firebaseConfig = {
   projectId: "survey-auth-10bd8",
   storageBucket: "survey-auth-10bd8.appspot.com",
   messagingSenderId: "162747464963",
-  appId: "1:162747464963:web:fd927f6937dded42a5bd36"
+  appId: "1:162747464963:web:fd927f6937dded42a5bd36",
 };
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth();
 
-mongoose.connect(uri).then(()=>{console.log('Connected to DB')}).catch((err)=>{console.log(err)})
+mongoose
+  .connect(uri)
+  .then(() => {
+    // User.updateOne(
+    //   { uid: "KlSibLangDM6ZgOOTpiOsAj2edg1" },
+    //   { $set: { forms: [] } },
+    //   (err, succ) => {
+    //     if (err) {
+    //       console.log(err);
+    //     } else {
+    //       console.log("done");
+    //     }
+    //   }
+    // );
+
+    // User.find({}, function (err, res) {
+    //   res.forEach((res2) => {
+    // console.log(res2.forms);
+    //   });
+    // });
+
+    console.log("Connected to DB");
+  })
+  .catch((err) => {
+    console.log(err);
+  });
 
 //middlewares
 app.use(cors());
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
-app.post('/createform', (req, res) => { })
+app.get("/", (req, res) => {
+  res.send("Hello World!");
+});
 
-app.post('/register', (req, res) => {
+app.post("/createform", (req, res) => {
+  const form = new Form({
+    uid: req.body.uid,
+    formid: req.body.formid,
+    formname: req.body.formname,
+    formdata: JSON.stringify(req.body.formData),
+  });
+
+  form
+    .save()
+    .then(() => {
+      User.findOneAndUpdate(
+        { uid: req.body.uid },
+        {
+          $push: {
+            forms: { formid: req.body.formid, formname: req.body.formName },
+          },
+        },
+        (err, succ) => {
+          if (err) console.log(err);
+        }
+      );
+      res.sendStatus(200);
+    })
+    .catch((err) => {
+      console.log(err);
+      if (err)
+        res.status(400).json({ Message: "Cannot Save New Form To DB", err });
+    });
+});
+
+app.post("/register", (req, res) => {
   const email = req.body.email;
   const pass = req.body.password;
   const name = req.body.name;
@@ -51,7 +108,7 @@ app.post('/register', (req, res) => {
         uid: userCredential.user.uid,
         email,
         name,
-        forms: []
+        forms: [],
       });
 
       user
@@ -59,21 +116,20 @@ app.post('/register', (req, res) => {
         .then(() => {
           res.status(200).json(user);
         })
-      .catch((err) => {
-        res
-          .status(401)
-          .json({ Message: "Could Not Save User Entry In Database", err });
-      });
-  })
+        .catch((err) => {
+          res
+            .status(401)
+            .json({ Message: "Could Not Save User Entry In Database", err });
+        });
+    })
     .catch((error) => {
       res
         .status(401)
         .json({ errorCode: error.code, errorMessage: error.message });
     });
-
 });
 
-app.post('/login', (req, res) => {
+app.post("/login", (req, res) => {
   const email = req.body.email;
   const pass = req.body.password;
 
@@ -92,8 +148,8 @@ app.post('/login', (req, res) => {
         .status(401)
         .json({ errorCode: error.code, errorMessage: error.message });
     });
-})
+});
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+  console.log(`Example app listening on port ${port}`);
+});
