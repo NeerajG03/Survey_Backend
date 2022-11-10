@@ -6,33 +6,92 @@ const User = require('./Models/user')
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const app = express()
 const port = 8000
-const uri = "mongodb+srv://xdneeraj:<password>@clusterstore.16q3u8s.mongodb.net/?retryWrites=true&w=majority";
+const uri = "mongodb+srv://xdneeraj:seproject@clusterstore.16q3u8s.mongodb.net/?retryWrites=true&w=majority";
+
+//FIREBASE
+const { initializeApp } = require("firebase/app");
+const {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+} = require("firebase/auth");
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDQp9aeY9LumiJ3Yi4Ol6F3suP154zj-vw",
+  authDomain: "survey-auth-10bd8.firebaseapp.com",
+  projectId: "survey-auth-10bd8",
+  storageBucket: "survey-auth-10bd8.appspot.com",
+  messagingSenderId: "162747464963",
+  appId: "1:162747464963:web:fd927f6937dded42a5bd36"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth();
 
 mongoose.connect(uri).then(()=>{console.log('Connected to DB')}).catch((err)=>{console.log(err)})
 
 //middlewares
-app.use(cors);
+app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
+app.post('/createform', (req, res) => { })
 
-app.post('/register', (req,res)=>{
-  const user = new User(req.body)
-  user.save().then(()=>{
-    res.sendStatus(200);
-  }).catch((err)=>{
-    res.status(401).json({Message :  'Error Storing User In Database', err})
+app.post('/register', (req, res) => {
+  const email = req.body.email;
+  const pass = req.body.password;
+  const name = req.body.name;
+
+  createUserWithEmailAndPassword(auth, email, pass)
+    .then((userCredential) => {
+      //Add new user entry to our database
+      const user = new User({
+        uid: userCredential.user.uid,
+        email,
+        name,
+        forms: []
+      });
+
+      user
+        .save()
+        .then(() => {
+          res.status(200).json(user);
+        })
+      .catch((err) => {
+        res
+          .status(401)
+          .json({ Message: "Could Not Save User Entry In Database", err });
+      });
   })
-})
-app.post('/createform', (req,res)=>{})
-app.get('/getforms', (req,res)=>{})
+    .catch((error) => {
+      res
+        .status(401)
+        .json({ errorCode: error.code, errorMessage: error.message });
+    });
 
-app.post('/api', (req, res)=>{
-    console.log('gottem');
-    console.log(req.body)
-    res.sendStatus(200);
+});
+
+app.post('/login', (req, res) => {
+  const email = req.body.email;
+  const pass = req.body.password;
+
+  signInWithEmailAndPassword(auth, email, pass)
+    .then((userCredential) => {
+      User.findOne({ uid: userCredential.user.uid }, (err, user) => {
+        if (err)
+          res
+            .status(401)
+            .json({ errorMessage: "Failed to fetch user from database" });
+        else res.status(200).json(user);
+      });
+    })
+    .catch((error) => {
+      res
+        .status(401)
+        .json({ errorCode: error.code, errorMessage: error.message });
+    });
 })
 
 app.listen(port, () => {
