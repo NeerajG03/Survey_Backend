@@ -165,11 +165,9 @@ app.post("/login", (req, res) => {
 });
 
 app.get("/getform/:formid", (req, res) => {
-  console.log(req.params.formid);
   Form.findOne({ formid: req.params.formid }, (err, result) => {
     if (err) console.log("ERROR", err);
     else {
-      console.log(result);
       res.status(200).json({
         ...result,
         formdata: JSON.parse(result.formdata),
@@ -177,6 +175,19 @@ app.get("/getform/:formid", (req, res) => {
     }
   });
 });
+
+app.get("/getformlist/:uid", (req, res) => {
+  User.findOne({ uid: req.params.uid }, (err, result) => {
+    if (err) console.log(err);
+    else {
+      res.status(200).json({
+        forms: result.forms,
+      });
+    }
+  });
+});
+
+app.post("/answerform", (req, res) => {});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
