@@ -47,9 +47,23 @@ mongoose
 
     // User.find({}, function (err, res) {
     //   res.forEach((res2) => {
-    // console.log(res2.forms);
+    //     console.log(res2.forms);
     //   });
     // });
+
+    // Form.find({}, function (err, res) {
+    //   res.forEach((r) => {
+    //     console.log(r);
+    //   });
+    // });
+
+    // Form.findOne(
+    //   { formid: "b4ec61fe-7fe2-425f-b028-7a78c79aac8a" },
+    //   function (err, res) {
+    //     if (err) console.log(err);
+    //     else console.log(res);
+    //   }
+    // );
 
     console.log("Connected to DB");
   })
@@ -70,7 +84,7 @@ app.post("/createform", (req, res) => {
     uid: req.body.uid,
     formid: req.body.formid,
     formname: req.body.formname,
-    formdata: JSON.stringify(req.body.formData),
+    formdata: JSON.stringify(req.body.formdata),
   });
 
   form
@@ -80,7 +94,7 @@ app.post("/createform", (req, res) => {
         { uid: req.body.uid },
         {
           $push: {
-            forms: { formid: req.body.formid, formname: req.body.formName },
+            forms: { formid: req.body.formid, formname: req.body.formname },
           },
         },
         (err, succ) => {
@@ -148,6 +162,20 @@ app.post("/login", (req, res) => {
         .status(401)
         .json({ errorCode: error.code, errorMessage: error.message });
     });
+});
+
+app.get("/getform/:formid", (req, res) => {
+  console.log(req.params.formid);
+  Form.findOne({ formid: req.params.formid }, (err, result) => {
+    if (err) console.log("ERROR", err);
+    else {
+      console.log(result);
+      res.status(200).json({
+        ...result,
+        formdata: JSON.parse(result.formdata),
+      });
+    }
+  });
 });
 
 app.listen(port, () => {
