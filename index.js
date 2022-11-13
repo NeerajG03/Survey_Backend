@@ -3,6 +3,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const User = require("./Models/user");
 const Form = require("./Models/form");
+const Answer = require("./Models/answer");
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const app = express();
@@ -57,13 +58,13 @@ mongoose
     //   });
     // });
 
-    // Form.findOne(
-    //   { formid: "b4ec61fe-7fe2-425f-b028-7a78c79aac8a" },
-    //   function (err, res) {
-    //     if (err) console.log(err);
-    //     else console.log(res);
+    // Form.findOneAndUpdate({ formid: "gucci gang" }, function (err, res) {
+    //   if (err) console.log(err);
+    //   else {
+    //     if (res) console.log(res);
+    //     else console.log("HAHA NOT FOUND");
     //   }
-    // );
+    // });
 
     console.log("Connected to DB");
   })
@@ -169,7 +170,9 @@ app.get("/getform/:formid", (req, res) => {
     if (err) console.log("ERROR", err);
     else {
       res.status(200).json({
-        ...result,
+        uid: result.uid,
+        formid: result.formid,
+        formname: result.formname,
         formdata: JSON.parse(result.formdata),
       });
     }
@@ -187,7 +190,62 @@ app.get("/getformlist/:uid", (req, res) => {
   });
 });
 
-app.post("/answerform", (req, res) => {});
+app.post("/answerform", (req, res) => {
+  Answer.findOne({ formid: req.body.formid }, (err, result) => {
+    if (err) console.log(err);
+    else {
+      if (result) {
+        //update
+        Answer.findOneAndUpdate(
+          { formid: req.body.formid },
+          {
+            $push: {
+              answerdata: {
+                ansuid: req.body.answerdata.ansuid,
+                data: JSON.stringify(req.body.answerdata.data),
+              },
+            },
+          },
+          (err, succ) => {
+            if (err) {
+              console.log(err);
+            } else {
+              res.sendStatus(200);
+            }
+          }
+        );
+      } else {
+        //create
+        const answer = new Answer({
+          uid: req.body.uid,
+          formid: req.body.formid,
+          answerdata: {
+            ansuid: req.body.answerdata.ansuid,
+            data: JSON.stringify(req.body.answerdata.data),
+          },
+        });
+
+        answer
+          .save()
+          .then(() => {
+            console.log("RECEIVED ANSWER DATA");
+            console.log(answer);
+            res.sendStatus(200);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      }
+    }
+  });
+});
+
+app.get("/answerlist/:formid", (req, res) => {
+  Answer.findOne({ formid: req.params.formid }, (err, result) => {
+    if (err) console.log(err);
+    res.status(200).json(result);
+  });
+});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
