@@ -1,0 +1,32 @@
+the data structure
+
+const ansSchema = new Schema({
+  ansuid: String,
+  data: String,
+});
+
+const answerSchema = new Schema({
+  uid: String,
+  formid: String,
+  answerdata: [ansSchema],
+});
+
+
+const formSchema = new Schema({
+  uid: String,
+  formid: String,
+  formname: String,
+  formdata: String,
+});
+
+const formListSchema = new Schema({
+  formid: String,
+  formname: String,
+});
+
+const userSchema = new Schema({
+  uid: String,
+  email: String,
+  name: String,
+  forms: [formListSchema],
+});
